@@ -47,8 +47,8 @@ extern CAN_HandleTypeDef hcan1;
 #define DRIVER_SERVER_CAN_ID		(DRIVER_SERVER_BASE_ID + CAN_ID_NUM)
 #define DRIVER_BROADCAST_ID			(DRIVER_SERVER_BASE_ID + 0x40 + GROUP_NUM)
 
-/*各标识符宏定义需与主控同�?*/
-/*控制标识�?*/
+/*各标识符宏定义需与主控同�?*/
+/*控制标识�?*/
 #define IDENTIFIER_DRIVER_STATE				0x01
 #define IDENTIFIER_CURR_KP_Q			  	0x02
 #define IDENTIFIER_CURR_KI_Q			   	0x03
@@ -74,7 +74,7 @@ extern CAN_HandleTypeDef hcan1;
 #define IDENTIFIER_SET_CONTROL_MODE		  0x19
 #define IDENTIFIER_SET_CLEAR_INTEGRAL		0x1A
 
-/*读取标识�?*/	
+/*读取标识�?*/	
 #define IDENTIFIER_ENABLE_DONE			0x50
 #define IDENTIFIER_READ_EXVEL       0x18
 #define IDENTIFIER_READ_ACC				  0x19
@@ -90,11 +90,11 @@ extern CAN_HandleTypeDef hcan1;
 #define IDENTIFIER_READ_POS_LOOP_OUTPUT		0x29
 #define IDENTIFIER_READ_LOAD_OBSERVER   	0x60
 
-/*错误标识�??*/
+/*错误标识�??*/
 #define IDENTIFIER_ENCODER_ERROR		0xEE
 #define IDENTIFIER_HARD_FAULT				0xFF
 
-/*霍尔标识�?*/
+/*霍尔标识�?*/
 #define IDENTIFIER_HALL_CATCH     0x31 
 
 /*寻找舵轮磁铁位置指令*/
@@ -122,6 +122,12 @@ struct CAN_t
 	CAN_Data_t Transmit;
 };
 
+/* DroneCAN message priority levels (also used by droncan_esc_rpm) */
+#define DRONCAN_PRIORITY_VERY_HIGH  0
+#define DRONCAN_PRIORITY_HIGH       1
+#define DRONCAN_PRIORITY_NORMAL     2
+#define DRONCAN_PRIORITY_LOW        3
+
 /* USER CODE END Private defines */
 
 
@@ -129,7 +135,8 @@ void MX_CAN1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_Respond(void);
-void CAN_Transmit(uint8_t identifier, int32_t transmitData, uint8_t length, uint32_t StdId);
+void CAN_Transmit(uint8_t identifier, int32_t transmitData, uint8_t length, uint32_t StdId, uint8_t priority);
+void CAN_Transmit_Raw(const uint8_t *data, uint8_t length, uint16_t message_type, uint8_t priority);
 void CAN_Receive(uint32_t *stdId, uint8_t *identifier, int32_t *receiveData);
 void CAN_Enable(void);
 /* USER CODE END Prototypes */

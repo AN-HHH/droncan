@@ -54,6 +54,7 @@
 #include "control.h"
 #include "GateDriver.h"
 #include "MotorConfig.h"
+#include "droncan_esc_rpm.h"
 
 /* USER CODE END Includes */
 
@@ -152,6 +153,8 @@ int main(void)
 	LL_mDelay(100);
 
 	CAN_Enable();
+	
+	DroneCAN_ESC_Init();
 	
 	//观测器初始化
 	AngleEstimator_Init();

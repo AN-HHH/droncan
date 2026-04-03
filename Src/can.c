@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
+#include "droncan_esc_rpm.h"
 
 /* USER CODE BEGIN 0 */
 #ifndef CAN_ID_NUM
@@ -41,12 +42,6 @@
 #define DRONCAN_FRAME_TYPE_SHIFT     4
 #define DRONCAN_LAST_FRAME_SHIFT     3
 #define DRONCAN_FRAME_IDX_SHIFT      0
-
-/* DroneCAN message priority levels */
-#define DRONCAN_PRIORITY_VERY_HIGH   0
-#define DRONCAN_PRIORITY_HIGH        1
-#define DRONCAN_PRIORITY_NORMAL      2
-#define DRONCAN_PRIORITY_LOW         3
 
 typedef struct {
     uint8_t priority;
@@ -803,6 +798,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				break;
 		}	
 	}
+	/*DroneCAN ESC RawCommand - 接收PX4发送的转速指令*/
+	else if(droncan_id.message_type == DRONCAN_ESC_RAWCMD_ID)
+	{
+		DroneCAN_ESC_RawCommandHandler(CAN.Receive.data_uint8);
+	}
 	
 	CAN_Respond();
 	
@@ -1051,6 +1051,57 @@ void CAN_Transmit(uint8_t identifier, int32_t transmitData, uint8_t length,
 	HAL_CAN_AddTxMessage(&hcan1, &TxMessage, (uint8_t *)&CAN.Transmit, &CAN.MailBox);
 	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_TX_MAILBOX_EMPTY);
 }
+
+/**
+ * @brief  Send raw bytes as a DroneCAN extended-frame message.
+ *
+ * Unlike CAN_Transmit(), this function sends the caller-supplied byte
+ * array verbatim (no proprietary identifier byte prepended).  It uses
+ * its own local TX-header and a private data buffer so it is safe to
+ * call from a different ISR context than CAN_Transmit().
+ *
+ * @param data         Pointer to payload bytes (up to 8).
+ * @param length       Number of bytes to send (1-8).
+ * @param message_type DroneCAN message-type ID placed in the extended CAN ID.
+ * @param priority     DroneCAN priority (DRONCAN_PRIORITY_*).
+ */
+void CAN_Transmit_Raw(const uint8_t *data, uint8_t length,
+                      uint16_t message_type, uint8_t priority)
+{
+	CAN_TxHeaderTypeDef txHeader = {0};
+	uint32_t mailbox;
+	uint8_t  txBuf[8] = {0};
+	DroneCAN_ID_t tx_id;
+
+	if (data == NULL || length == 0U || length > 8U)
+	{
+		return;
+	}
+
+	/* Build DroneCAN extended ID for an ESC status (single-frame) */
+	tx_id.priority     = priority;
+	tx_id.message_type = message_type;
+	tx_id.source_node_id = (uint8_t)(DRIVER_CLIENT_CAN_ID & 0x7FU);
+	tx_id.transfer_id  = 0U;
+	tx_id.frame_type   = 0U;
+	tx_id.last_frame   = 1U;
+	tx_id.frame_index  = 0U;
+
+	txHeader.StdId = 0U;
+	txHeader.ExtId = DroneCAN_BuildID(&tx_id);
+	txHeader.IDE   = CAN_ID_EXT;
+	txHeader.RTR   = CAN_RTR_DATA;
+	txHeader.DLC   = length;
+
+	for (uint8_t i = 0U; i < length; i++)
+	{
+		txBuf[i] = data[i];
+	}
+
+	HAL_CAN_AddTxMessage(&hcan1, &txHeader, txBuf, &mailbox);
+	HAL_CAN_ActivateNotification(&hcan1, CAN_IT_TX_MAILBOX_EMPTY);
+}
+
 
 
 void CAN_Receive(uint32_t *stdId, uint8_t *identifier, int32_t *receiveData)
