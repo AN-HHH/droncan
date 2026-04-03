@@ -106,10 +106,10 @@ void MX_CAN1_Init(void)
 {
 
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 5;
+  hcan1.Init.Prescaler = 2;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_4TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_14TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_4TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = ENABLE;
@@ -1005,8 +1005,8 @@ void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan)
 }
 
 /* Modified CAN_Transmit function to support DroneCAN */
-void CAN_Transmit(uint8_t identifier, int32_t transmitData, uint8_t length, 
-                   uint32_t dest_node_id, uint8_t priority)
+void CAN_Transmit(uint8_t identifier, int32_t transmitData, uint8_t length,
+                   uint32_t destNodeId, uint8_t priority)
 {
 	uint32_t absData = abs(transmitData);
 	DroneCAN_ID_t tx_id;
@@ -1014,7 +1014,7 @@ void CAN_Transmit(uint8_t identifier, int32_t transmitData, uint8_t length,
 	/* Build DroneCAN extended ID */
 	tx_id.priority = priority;
 	tx_id.message_type = identifier;  /* Map identifier to message_type */
-	tx_id.source_node_id = dest_node_id;
+	tx_id.source_node_id = destNodeId;
 	tx_id.transfer_id = 0;
 	tx_id.frame_type = 0;  /* Single frame */
 	tx_id.last_frame = 1;
