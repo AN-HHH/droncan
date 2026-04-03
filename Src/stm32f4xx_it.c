@@ -40,6 +40,7 @@
 /* USER CODE BEGIN Includes */
 #include "MotorConfig.h"
 #include "can.h"
+#include "droncan_esc_rpm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -350,7 +351,7 @@ void ADC_IRQHandler(void)
 		CAN_Enable();
 	}
 											
-	/*获取实际的三相电流�??*/
+	/*获取实际的三相电流�??*/
 	GetPhaseCurrent();
 	
 /*获取实时母线电压*/
@@ -376,7 +377,7 @@ void ADC_IRQHandler(void)
 										/*计算电磁转矩*/
 //										CalculateEleTorque(CoordTrans.CurrQ, &TorqueCtrl.EleTorque_Nm);
 
-										/*慎用, 每五个周期发送一次数据可能导致错过异常数�?*/
+										/*慎用, 每五个周期发送一次数据可能导致错过异常数�?*/
 										static int so;
 										so++;
 										if(so>50)
@@ -425,7 +426,7 @@ void ADC_IRQHandler(void)
 
 										break;
 			
-			case POS_SPD_CURR_CTRL_MODE :/*位置-速度-电流控制模式, 即常规位置控制模�?*/
+			case POS_SPD_CURR_CTRL_MODE :/*位置-速度-电流控制模式, 即常规位置控制模�?*/
 				
 										PosSpdCurrController();
 										/*计算电磁转矩*/
@@ -531,7 +532,11 @@ void ADC_IRQHandler(void)
 		CalculateEleTorque(CoordTrans.CurrQ, &TorqueCtrl.EleTorque_Nm);		
 
 	}
-	/*清除ADC注入模式中断标志�?*/
+	/*清除ADC注入模式中断标志�?*/
+	/* ===== DroneCAN ESC 定时处理 ===== */
+	static uint16_t adc_isr_counter = 0;
+	adc_isr_counter++;
+	DroneCAN_ESC_ProcessInADCISR(adc_isr_counter);
 	__HAL_ADC_CLEAR_FLAG(&hadc1, ADC_FLAG_JEOC);
 	__HAL_ADC_CLEAR_FLAG(&hadc2, ADC_FLAG_JEOC);
 	__HAL_ADC_CLEAR_FLAG(&hadc3, ADC_FLAG_JEOC);
