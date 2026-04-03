@@ -21,6 +21,8 @@
 #include "can.h"
 
 /* USER CODE BEGIN 0 */
+#include "droncan_esc_rpm.h"
+
 #ifndef CAN_ID_NUM
  #error "CAN_ID_NUMBER is not undefined."
 #endif
@@ -208,6 +210,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	
 	/* Map DroneCAN message_type to standard CAN identifier */
 	CAN.Identifier = droncan_id.message_type & 0xFF;
+	
+	/* ===== 处理 DroneCAN RawCommand ===== */
+	if (droncan_id.message_type == DRONCAN_ESC_RAWCMD_ID)
+	{
+		DroneCAN_ESC_RawCommandHandler(CAN.Receive.data_uint8, droncan_id.source_node_id);
+	}
 	
 	/*ACTION指令*/
 	/*点对点模式 - 使用 source_node_id 区分*/
